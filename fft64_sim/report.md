@@ -4,9 +4,11 @@
 
 [English version](report_en.md)
 
+> 证据更正（2026-11-22）：各结果的原始报告、实现阶段与历史构建限制见[报告索引](reports/README.md)。PDF 为较早的导出版本。
+
 ## 摘要
 
-本报告围绕 64 点 Radix-2 DIT FFT 的硬件化流程展开，先实现全并行 flash 参考模型以验证算法正确性，再依据 Parhi 折叠/SDF 理论完成串流版 RTL。设计在 Q1.15 定点下集成输入位反转、六级 SDF stage 以及统一归一化策略，并构建 SystemVerilog Testbench + Python/NumPy 联合验证链路，实现一键仿真、日志采集与误差统计。基于 Virtex-7 器件的综合/实现显示：SDF 结构在 LUT、寄存器、DSP、I/O 等指标上相较全并行方案平均下降 70%–98%，在 100 MHz 约束下仍保有 1.6 ns 正裕量，证明该折叠式 FFT 兼具算法等效性与工程可行性，可作为更大规模或可重构 DSP 模块的基础。
+本报告围绕 64 点 Radix-2 DIT FFT 的硬件化流程展开，先实现全并行 flash 参考模型以验证算法正确性，再依据 Parhi 折叠/SDF 理论完成串流版 RTL。设计在 Q1.15 定点下集成输入位反转、六级 SDF stage 以及统一归一化策略，并构建 SystemVerilog Testbench + Python/NumPy 联合验证链路，实现一键仿真、日志采集与误差统计。Virtex-7 综合报告显示，SDF 相较全并行方案的 LUT、寄存器、DSP、I/O 使用量分别下降 82.4%、68.8%、96.9%、98.3%；另据布线后报告，100 MHz 内部时钟约束下的 setup slack 为 1.631 ns，证明该折叠式 FFT 兼具算法等效性与工程可行性，可作为更大规模或可重构 DSP 模块的基础。
 
 ## 目录
 
@@ -529,7 +531,7 @@ First 64 points comparison:
 
 #### 7.1.1 资源利用汇总
 
-表 7-1 给出了全并行 FFT 架构与折叠式 SDF FFT 架构在 Virtex-7 FPGA 上的综合资源利用情况。
+表 7-1 给出了 1 月 9 日的综合资源利用情况，来源为 [Flash 综合报告](vivado_project/FFT64_SIM/utilization_report_flash_virtex.txt)与 [SDF 综合报告](vivado_project/FFT64_SIM/utilization_report_sdf_virtex.txt)。这两份报告的 Design State 均为 Synthesized，不代表布局后资源。
 
 **表 7-1 全并行 FFT 与 SDF FFT 资源利用对比**
 
@@ -570,7 +572,7 @@ First 64 points comparison:
 相比之下，折叠式 SDF FFT 架构展现出显著的工程优势：
 
 - 通过折叠与时间复用，仅使用 **24 个 DSP48E1**，对应每一级 1 个复乘器；
-- Slice LUT 与寄存器使用量下降至原来的 **20% 左右**；
+- Slice LUT 使用量降至原来的 **17.6%**，寄存器降至 **31.2%**；
 - 顶层接口采用流式输入输出，仅需 **68 个 I/O 引脚**；
 - 完全满足 Virtex-7 FPGA 的物理资源约束。
 
@@ -586,7 +588,9 @@ First 64 points comparison:
 
 - 时钟约束：`clk = 100 MHz（10 ns）`
 - 分析类型：最大延迟（Setup Timing）
-- 分析阶段：Implementation 后 Timing Analysis
+- 分析阶段：[布线后时序报告](vivado_project/FFT64_SIM/FFT64_SIM.runs/impl_1/fft64_dit_sdf_timing_summary_routed.rpt)
+- 资源阶段：[布局后报告](vivado_project/FFT64_SIM/FFT64_SIM.runs/impl_1/fft64_dit_sdf_utilization_placed.rpt)为 2,283 LUT，与综合对比的 2,158 LUT 分开引用
+- 约束范围：内部时钟路径；尚未设置外部输入/输出延迟
 
 ---
 
@@ -608,8 +612,8 @@ First 64 points comparison:
 
 由此可得：
 
-- 该设计在 **100 MHz** 时钟频率下 **满足所有时序约束**，并具有正的时序裕量；
-- 根据 WNS 推算，理论最高工作频率可达到 **约 115–120 MHz**；
+- 该设计在 **100 MHz** 时钟频率下 **满足已设置的内部时钟约束**，并具有正的时序裕量；
+- 本次记录只验证 100 MHz 内部时序；最高频率需要重新约束、实现和验证，不能由单次 WNS 直接认定；
 - 关键时序路径主要集中在 **FFT Stage 内部的蝶形复数运算单元**，包括  
     **DSP48E1 复数乘法器 + 定点加法级联路径**；
 - 时序瓶颈与 SDF FFT 架构的理论分析一致，未出现异常的跨级组合逻辑路径。
@@ -645,7 +649,7 @@ First 64 points comparison:
 
 - 完成了完整的综合、布局、布线；
 - 时序分析基于真实物理实现；
-- 具备**可下载、可运行、可量产**的工程可行性。
+- DRC 仍包含引脚位置和 I/O 标准未设置的问题，尚不能据此认定可生成上板 bitstream、已在硬件运行或可量产。
 
 ---
 
@@ -656,11 +660,11 @@ First 64 points comparison:
 1. **全并行 FFT 架构**
 	- 结构直观，便于算法验证；
 	- 资源消耗极高；
-	- 在真实 FPGA 上不可实现。
+	- 当前顶层接口超过目标器件 I/O 上限，需要重构接口后才能尝试物理实现。
 2. **折叠式 SDF FFT 架构**
 	- 严格遵循 VLSI DSP 折叠理论；
 	- 在保持 1 sample/cycle 吞吐率的同时，大幅降低资源消耗；
-	- 满足 FPGA 物理与时序约束；
+	- 满足归档构建中的内部时钟约束，开发板 I/O 约束与硬件验证仍需补齐；
 	- 更符合工程实际需求。
 
 ## 8. 结论

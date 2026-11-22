@@ -51,8 +51,8 @@ X[k] = (1/64) · Σ(n=0…63) x[n] · exp(-j·2π·k·n/64)
 | [`fft64_sim/scripts/run_sim.tcl`](fft64_sim/scripts/run_sim.tcl) | Vivado 批处理仿真脚本 |
 | [`fft64_sim/run_fft64_all.py`](fft64_sim/run_fft64_all.py) | 一键运行 Vivado + Python，并按时间戳归档日志 |
 | [`fft64_sim/vivado_project/FFT64_SIM/FFT64_SIM.xpr`](fft64_sim/vivado_project/FFT64_SIM/FFT64_SIM.xpr) | Vivado 工程文件 |
-| [`fft64_sim/reports/`](fft64_sim/reports/) | 实现后的资源和时序报告 |
-| [`fft64_sim/report.pdf`](fft64_sim/report.pdf) | 项目详细报告 |
+| [`fft64_sim/reports/`](fft64_sim/reports/) | 历史报告及来源、阶段索引 |
+| [`fft64_sim/report.pdf`](fft64_sim/report.pdf) | 历史 PDF 导出；修订内容见 [Markdown 报告](fft64_sim/report.md)和[报告索引](fft64_sim/reports/README.md) |
 
 仿真目录还有一份更聚焦于运行细节的说明：[`fft64_sim/README.md`](fft64_sim/README.md)。
 
@@ -113,18 +113,27 @@ SystemVerilog testbench 与 Python 校验脚本使用相同的模式编号和波
 
 ## FPGA 结果
 
-下表来自仓库内相同 Virtex-7 器件系列（`7vx690tffg1761-2`）的 Vivado 报告。Flash 为全并行参考结构，SDF 为折叠后的实现结构。
+下表来自 2026 年 1 月 9 日、Vivado 2018.3 对同一目标器件 `7vx690tffg1761-2` 生成的两份**综合后**报告：[Flash 资源报告](fft64_sim/vivado_project/FFT64_SIM/utilization_report_flash_virtex.txt)与 [SDF 资源报告](fft64_sim/vivado_project/FFT64_SIM/utilization_report_sdf_virtex.txt)。
 
-| 指标 | Flash 参考 | SDF 实现 | 降幅 |
+| 指标 | Flash 综合 | SDF 综合 | 降幅 |
 | --- | ---: | ---: | ---: |
 | Slice LUT | 12,289 | 2,158 | 82.4% |
 | Slice 寄存器 | 15,496 | 4,830 | 68.8% |
 | DSP48E1 | 768 | 24 | 96.9% |
 | Bonded IOB | 4,100 | 68 | 98.3% |
 
-布线后的 SDF 时序报告显示：在 **100 MHz（10 ns）时钟**下，setup slack 为 **1.631 ns**，setup/hold 均无违例。原始报告见 [`impl_1_util.rpt`](fft64_sim/reports/impl_1_util.rpt)、[`impl_1_timing.rpt`](fft64_sim/reports/impl_1_timing.rpt) 和 [`fft64_dit_sdf_timing_summary_routed.rpt`](fft64_sim/vivado_project/FFT64_SIM/FFT64_SIM.runs/impl_1/fft64_dit_sdf_timing_summary_routed.rpt)。
+Flash 顶层接口需要 4,100 个 IOB，超过目标器件可用的 850 个。该表比较的是综合结果，并不代表两种结构都完成了布线或上板验证。
 
-这些数字仅代表仓库中保存的这一版构建结果；器件、Vivado 版本、约束、综合选项和 I/O 分配都会影响最终结果。
+后续 SDF 实现阶段的结果单独列出：
+
+| 阶段 | 报告记录 | 来源 |
+| --- | --- | --- |
+| 布局后资源 | 2,283 LUT、4,830 寄存器、24 DSP、68 IOB | [布局后报告](fft64_sim/vivado_project/FFT64_SIM/FFT64_SIM.runs/impl_1/fft64_dit_sdf_utilization_placed.rpt) |
+| 布线后时序 | 100 MHz；setup slack **+1.631 ns**、hold slack **+0.084 ns**；setup/hold 失败端点均为零 | [布线后时序报告](fft64_sim/vivado_project/FFT64_SIM/FFT64_SIM.runs/impl_1/fft64_dit_sdf_timing_summary_routed.rpt) |
+
+时序结果适用于已约束的内部路径。外部输入/输出延迟和开发板引脚分配仍不完整；这些记录不能证明已上板运行或实测最高频率。
+
+较早的 `fft64_sim/reports/impl_1_*.rpt` 来自 1 月 8 日的 `7vx485tffg1157-1` 构建。其时序报告**没有用户指定的时序约束**，不能用于支持上述 100 MHz 结论。各报告的来源、阶段和限制见[报告索引](fft64_sim/reports/README.md)。以上均为归档结果，本次文档修正没有重新运行 Vivado。
 
 ## 设计说明与已知限制
 

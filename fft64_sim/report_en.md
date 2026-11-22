@@ -4,9 +4,11 @@
 
 **School of Integrated Circuits — Guo Sufeng, 231880273**
 
+> Evidence correction (2026-11-22): see the [report index](reports/README.md) for source reports, implementation stages, and historical-run limitations. The PDF is an earlier export.
+
 ## Abstract
 
-This report describes the hardware implementation flow of a 64-point radix-2 DIT FFT. A fully parallel flash reference model was first built to validate the algorithm. The datapath was then folded into a streaming RTL design using the folding and SDF concepts described by Parhi. The design uses Q1.15 fixed-point arithmetic, an input bit-reversal buffer, six SDF stages, and a unified normalization strategy. A joint SystemVerilog testbench and Python/NumPy verification flow provides one-click simulation, log collection, and error statistics. Synthesis and implementation results on a Virtex-7 device show reductions of approximately 70–98% in the main resource categories compared with the fully parallel reference, while the routed SDF implementation has 1.6 ns of positive slack under the 100 MHz clock constraint. The result demonstrates that a folded FFT can preserve algorithmic equivalence while offering a practical hardware cost for larger or reconfigurable DSP systems.
+This report describes the hardware implementation flow of a 64-point radix-2 DIT FFT. A fully parallel flash reference model was first built to validate the algorithm. The datapath was then folded into a streaming RTL design using the folding and SDF concepts described by Parhi. The design uses Q1.15 fixed-point arithmetic, an input bit-reversal buffer, six SDF stages, and a unified normalization strategy. A joint SystemVerilog testbench and Python/NumPy verification flow provides one-click simulation, log collection, and error statistics. The Virtex-7 synthesis reports show resource reductions of 68.8–98.3% relative to the fully parallel reference. Separately, the routed SDF report records 1.631 ns of positive setup slack under the 100 MHz internal clock constraint. The result demonstrates that a folded FFT can preserve algorithmic equivalence while offering a practical hardware cost for larger or reconfigurable DSP systems.
 
 ## Contents
 
@@ -189,6 +191,8 @@ The two architectures were synthesized and analyzed on a Xilinx Virtex-7 `xc7vx6
 
 ### 7.1 FPGA resource comparison
 
+Source: January 9 post-synthesis [flash](vivado_project/FFT64_SIM/utilization_report_flash_virtex.txt) and [SDF](vivado_project/FFT64_SIM/utilization_report_sdf_virtex.txt) reports. These are synthesis counts, not placed utilization.
+
 | Resource | Fully parallel FFT | SDF FFT | Reduction |
 | --- | ---: | ---: | ---: |
 | Slice LUTs | 12,289 | 2,158 | 82.4% |
@@ -200,11 +204,11 @@ The two architectures were synthesized and analyzed on a Xilinx Virtex-7 `xc7vx6
 
 The parallel design exposes the complete 64-point arrays at its top level. Its 4,100 bonded IOBs exceed the device's 850 available I/Os, so it cannot complete physical implementation. Its main value is algorithmic and functional comparison.
 
-The SDF design reuses one complex multiplier per stage, uses only 24 DSP48E1 blocks, reduces LUT and register usage to roughly one fifth of the reference, and exposes a compact 68-pin streaming interface. This is the practical benefit of folding: trading latency for area.
+The SDF design reuses one complex multiplier per stage, uses only 24 DSP48E1 blocks, reduces LUT usage to 17.6% and register usage to 31.2% of the reference, and exposes a compact 68-pin streaming interface. This is the practical benefit of folding: trading latency for area.
 
 ### 7.2 SDF timing performance
 
-The routed SDF implementation uses a 100 MHz clock (10 ns period). The key results are:
+The [routed SDF timing report](vivado_project/FFT64_SIM/FFT64_SIM.runs/impl_1/fft64_dit_sdf_timing_summary_routed.rpt) uses a 100 MHz clock (10 ns period). The separate [placed utilization report](vivado_project/FFT64_SIM/FFT64_SIM.runs/impl_1/fft64_dit_sdf_utilization_placed.rpt) records 2,283 LUTs, versus 2,158 in the synthesis comparison. External input/output delays are absent; timing results below apply to constrained internal paths. The key results are:
 
 | Metric | Result |
 | --- | ---: |
@@ -218,11 +222,11 @@ The critical path starts in an FFT-stage register, passes through a DSP48E1 comp
 
 ### 7.3 Theoretical parallel timing versus engineering reality
 
-A fully parallel design may produce an idealized post-synthesis timing report, but its excessive I/O count prevents successful placement and routing. That timing number is therefore not an engineering result. The SDF design completes synthesis, placement, routing, and timing analysis with real physical constraints, so its timing result is the meaningful deployment metric.
+A fully parallel design may produce an idealized post-synthesis timing report, but its excessive I/O count prevents successful placement and routing. That timing number is therefore not an engineering result. The saved SDF run completed synthesis, placement, routing, and internal timing analysis. Missing board pin assignments and I/O standards remain in the DRC report. These records do not establish bitstream readiness or board operation.
 
 ### 7.4 Overall comparison
 
-The fully parallel architecture is clear and useful for algorithm validation, but it is too expensive for the target FPGA. The folded SDF architecture follows the VLSI DSP folding model, keeps one-sample-per-cycle throughput, greatly reduces resources, and satisfies the saved FPGA timing and physical constraints.
+The fully parallel architecture is clear and useful for algorithm validation, but it is too expensive for the target FPGA. The folded SDF architecture follows the VLSI DSP folding model, keeps one-sample-per-cycle throughput, greatly reduces resources, and meets the saved internal clock constraint. Board-specific I/O constraints and hardware verification remain necessary.
 
 ## 8. Conclusion
 

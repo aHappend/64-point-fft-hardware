@@ -51,8 +51,8 @@ X[k] = (1/64) · Σ(n=0…63) x[n] · exp(-j·2π·k·n/64)
 | [`fft64_sim/scripts/run_sim.tcl`](fft64_sim/scripts/run_sim.tcl) | Vivado batch-simulation script |
 | [`fft64_sim/run_fft64_all.py`](fft64_sim/run_fft64_all.py) | One-click Vivado + Python driver with timestamped log collection |
 | [`fft64_sim/vivado_project/FFT64_SIM/FFT64_SIM.xpr`](fft64_sim/vivado_project/FFT64_SIM/FFT64_SIM.xpr) | Vivado project |
-| [`fft64_sim/reports/`](fft64_sim/reports/) | Routed utilization and timing reports |
-| [`fft64_sim/report.pdf`](fft64_sim/report.pdf) | Detailed project report |
+| [`fft64_sim/reports/`](fft64_sim/reports/) | Historical reports and source/stage index |
+| [`fft64_sim/report.pdf`](fft64_sim/report.pdf) | Historical PDF export; see the corrected [Markdown report](fft64_sim/report_en.md) and [report index](fft64_sim/reports/README.md) |
 
 The simulation directory has its own focused guide: [`fft64_sim/README.md`](fft64_sim/README.md).
 
@@ -113,18 +113,27 @@ The checker reports maximum and average absolute error, prints point-by-point co
 
 ## FPGA results
 
-The following figures are taken from the checked-in Vivado reports for the same Virtex-7 device family (`7vx690tffg1761-2`). The flash design is the fully parallel reference; the SDF design is the folded implementation.
+The resource comparison below comes from the two **post-synthesis** reports dated January 9, 2026, using Vivado 2018.3 and the same `7vx690tffg1761-2` target: [flash utilization](fft64_sim/vivado_project/FFT64_SIM/utilization_report_flash_virtex.txt) and [SDF utilization](fft64_sim/vivado_project/FFT64_SIM/utilization_report_sdf_virtex.txt).
 
-| Metric | Flash reference | SDF implementation | Reduction |
+| Metric | Flash synthesis | SDF synthesis | Reduction |
 | --- | ---: | ---: | ---: |
 | Slice LUTs | 12,289 | 2,158 | 82.4% |
 | Slice registers | 15,496 | 4,830 | 68.8% |
 | DSP48E1 | 768 | 24 | 96.9% |
 | Bonded IOB | 4,100 | 68 | 98.3% |
 
-The routed SDF report records **1.631 ns setup slack** at a **100 MHz (10 ns) clock**, with no setup or hold violations. See [`impl_1_util.rpt`](fft64_sim/reports/impl_1_util.rpt), [`impl_1_timing.rpt`](fft64_sim/reports/impl_1_timing.rpt), and [`fft64_dit_sdf_timing_summary_routed.rpt`](fft64_sim/vivado_project/FFT64_SIM/FFT64_SIM.runs/impl_1/fft64_dit_sdf_timing_summary_routed.rpt) for the source reports.
+The flash top-level interface requires 4,100 IOBs, exceeding the target's 850 available IOBs. This table compares synthesized architectures, not two successfully routed or board-tested designs.
 
-These numbers describe the checked-in build, not a universal guarantee: device, Vivado version, constraints, synthesis options, and I/O assignments all affect the result.
+The later SDF implementation records are separate:
+
+| Stage | Recorded result | Source |
+| --- | --- | --- |
+| Placed utilization | 2,283 LUTs, 4,830 registers, 24 DSPs, 68 IOBs | [Placed report](fft64_sim/vivado_project/FFT64_SIM/FFT64_SIM.runs/impl_1/fft64_dit_sdf_utilization_placed.rpt) |
+| Routed timing | 100 MHz; setup slack **+1.631 ns**, hold slack **+0.084 ns**; zero setup/hold failing endpoints | [Routed timing report](fft64_sim/vivado_project/FFT64_SIM/FFT64_SIM.runs/impl_1/fft64_dit_sdf_timing_summary_routed.rpt) |
+
+The timing result covers the constrained internal paths. External input/output delays and board-specific pin assignments remain incomplete; these records do not establish board operation or a measured maximum clock frequency.
+
+The older `fft64_sim/reports/impl_1_*.rpt` files describe a January 8 run on `7vx485tffg1157-1`. Its timing report has **no user-specified timing constraints** and cannot support the 100 MHz result. See the [report index](fft64_sim/reports/README.md) for exact sources, stages, and limitations. These are archived results; this documentation correction did not rerun Vivado.
 
 ## Design notes and limitations
 

@@ -1,5 +1,7 @@
 # FFT64 Simulation & Verification
 
+For FPGA resource/timing evidence and historical-run limitations, start with the [report index](reports/README.md).
+
 ## Project Highlights
 - 64-point radix-2 DIT FFT (SDF architecture), including twiddle factor ROM, complex multiplier, input bit-reversal buffer, and cascaded delay lines.
 - A unified Q1.15 fixed-point interface is adopted across RTL, testbench, and Python verification scripts, with internal computations retaining extra bit width before quantization.
@@ -86,6 +88,8 @@ python py/check_fft64.py --input-mode 1 --no-show --save-dir plots
 - **Custom stimulus**: Write 64 lines of `real imag` to `rt1/input.txt` and set `INPUT_MODE=4`.
 
 # FFT64 Simulation & Verification
+
+FPGA 资源、时序结果及历史构建的适用范围见[报告索引](reports/README.md)。
 
 ## 项目亮点
 - 64 点 radix-2 DIT FFT（SDF 结构），含旋转因子 ROM、复乘器、输入位反转缓冲以及级联延迟线。
