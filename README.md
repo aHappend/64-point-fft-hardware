@@ -1,6 +1,16 @@
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="brand/logo-dark.svg">
+    <img src="brand/logo.svg" width="380" alt="Vulcan">
+  </picture>
+  <p><a href="https://github.com/aHappend/vulcan-showcase"><strong>Vulcan Showcase</strong></a> · <a href="https://github.com/aHappend/bellows-l">Bellows-L (LZ4)</a> · <a href="https://github.com/aHappend/billet-t">Billet-T (FFT)</a> · <a href="https://github.com/aHappend/billet-f">Billet-F (FIR)</a> · <a href="https://github.com/aHappend/crucible-g">Crucible-G (3D)</a> · <a href="https://github.com/aHappend/furnace-x">Furnace-X (DMA/CRC)</a> · <a href="https://github.com/aHappend/hammer-v">Hammer-V (RISC-V)</a> · <a href="https://github.com/aHappend/rivet-a">Rivet-A (AES-GCM)</a> · <a href="https://github.com/aHappend/rivet-h">Rivet-H (SHA-256)</a> · <a href="https://github.com/aHappend/swage-s">Swage-S (ISP)</a> · <a href="https://github.com/aHappend/sable">SABLE</a> · <a href="README.zh-CN.md"><strong>简体中文</strong></a></p>
+</div>
+
+---
+
 # Hardware Implementation and Optimization of a 64-Point FFT
 
-[简体中文](README_zh-CN.md)
+[简体中文](README.zh-CN.md)
 
 This repository implements and verifies a **64-point radix-2 decimation-in-time (DIT) FFT** in SystemVerilog. It starts with a fully parallel (“flash”) reference architecture, then folds the datapath into a streaming **single-delay feedback (SDF)** architecture based on the ideas in Keshab K. Parhi's VLSI DSP work.
 
